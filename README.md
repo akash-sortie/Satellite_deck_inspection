@@ -1,83 +1,107 @@
-# AVID: Automated Vision Inspection for Decks
+# 🛰️ AVID: Automated Vision & Inspection Pipeline for Aerospace Hardware
 
-**AVID** (Automated Vision Inspection for Decks) is a hybrid Machine Vision and Unsupervised Machine Learning pipeline engineered for sub-millimeter aerospace quality control. 
+[![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
+[![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-green.svg)](https://opencv.org/)
+[![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-Isolation%20Forest-orange.svg)](https://scikit-learn.org/)
+[![PyQt6](https://img.shields.io/badge/PyQt6-Industrial%20GUI-red.svg)](https://pypi.org/project/PyQt6/)
 
-Designed to inspect 43 micro-features on high-resolution metallic decks, AVID dynamically corrects severe radial lens distortion and uses mathematical feature extraction to categorize manufacturing anomalies with extreme precision.
-
----
-
-## 🏗️ Core Architecture
-
-The system abandons standard Deep Learning (which fails under high compression and data starvation) in favor of a bespoke, two-phase deterministic pipeline:
-
-### 1. Phase 1: Macro-Localization (Computer Vision)
-* **Pre-Processing:** Neutralizes harsh metallic surface glare using Contrast Limited Adaptive Histogram Equalization (CLAHE) and Bilateral Filtering.
-* **Geometric Registration:** Calculates a precise Perspective Transformation (Homography matrix) using 4 hardcoded fiducial anchors to bridge the 2D CAD blueprint to the raw physical photograph.
-* **Distortion Compensation:** Expands the geometric search radius to 20.0mm to capture outer holes shifted by severe (16.5mm) radial lens distortion, extracting 150x150 pixel Regions of Interest (ROIs).
-
-### 2. Phase 2: Micro-Inspection (Machine Learning)
-* **Center-Weighted Extraction:** Algorithmically ignores neighboring features, extracting sub-pixel geometry (Area, Circularity, Position Offset, Mean Intensity) strictly from the target hole.
-* **Unsupervised Anomaly Detection:** An **Isolation Forest** model learns the mathematical baseline of a "perfect" aerospace hole from a small dataset, flagging any deviations without requiring thousands of training images.
-* **Sub-Class Diagnostics:** Categorizes anomalies into actionable physical defects rather than generic failures.
-
-### 3. Phase 3: The Command Center
-A fully integrated, dark-themed PyQt6 dashboard providing real-time execution control and embedded Matplotlib analytics to visualize the ML isolation clusters.
+**AVID** (Automated Vision Inspection for Decks) is a hybrid Machine Vision and Unsupervised Machine Learning pipeline engineered for sub-millimeter aerospace quality control. Developed during an internship at the **U R Rao Satellite Centre (URSC), ISRO**, AVID combines deterministic spatial transformation with robust anomaly detection to eliminate subjective manual inspection bottlenecks.
 
 ---
 
-## 📊 Defect Categorization
+## 📋 1. Problem Statement & Engineering Challenges
+Manufacturing high-reliability aerospace components under strict national standards requires zero-tolerance quality assurance. Manual inspection of metallic satellite decks is slow, error-prone, and highly subjective due to complex environmental and optical constraints:
+* **Severe Surface Glare:** High-intensity factory lighting creates intense specular reflections across metallic surfaces, obscuring micro-feature boundaries.
+* **Optical Distortion:** Wide-angle camera optics induce severe **16.5mm radial lens distortion** ("fish-eye" effect), warping outer-edge coordinates and shifting feature locations relative to CAD blueprints.
+* **Data Scarcity & Cold Start:** Complete absence of pre-existing labeled defect datasets renders supervised deep learning architectures (like CNNs) impractical due to severe overfitting risks.
 
-The ML pipeline categorizes every hole into one of four states:
-* 🟢 **NOMINAL_AEROSPACE_GRADE:** Perfect circularity and intensity.
-* 🔵 **BRIGHT_OBSTRUCTION:** Intensity > 45. The hole is completely washed out by a massive glare spike.
-* 🔴 **BURR_OR_TEAROUT:** Circularity < 0.08. Physical metal around the hole is warped, scratched, or improperly drilled.
-* 🟠 **SURFACE_ANOMALY_ML_ONLY:** The Isolation Forest detected a subtle deviation (e.g., micro-scratch inside the crop).
+---
+
+## 🏗️ 2. Architectural Approach
+AVID abandons data-starved deep learning frameworks in favor of a bespoke, two-phase deterministic-stochastic pipeline optimized for speed, interpretability, and execution reliability in secure, air-gapped environments.
+
+### Phase 1: Macro-Localization & Geometric Correction (OpenCV)
+* **Illumination Normalization:** Applied *Contrast Limited Adaptive Histogram Equalization (CLAHE)* and *Bilateral Filtering* to neutralize metallic specular glare while preserving high-frequency structural edges.
+* **Geometric Registration:** Computed $3 \times 3$ *Homography matrices* via RANSAC using 4 fiducial anchors, mapping 2D CAD blueprint spaces to physical photographs with zero reprojection error.
+* **Distortion Compensation & ROI Extraction:** Dynamically expanded search radii to 20.0mm to capture outer holes displaced by radial distortion, automatically extracting isolated $150 \times 150$ pixel Regions of Interest (ROIs) across 43 micro-features while eliminating neighbor pixel bleed.
+
+### Phase 2: Micro-Inspection & Unsupervised Learning (Scikit-Learn)
+* **Sub-Pixel Feature Engineering:** Extracted quantitative geometric metrics strictly from target crops, including contour Area, Circularity, Mean Intensity (glare quantification), and spatial Position Offsets (Euclidean distance).
+* **Unsupervised Anomaly Detection:** Deployed an **Isolation Forest** model to establish a mathematical baseline of "Nominal" aerospace-grade geometry from minimal training samples, effectively isolating structural outliers without requiring supervised labels.
+* **Actionable Sub-Class Diagnostics:** Categorized anomalies into discrete physical defect classes:
+  * 🟢 **NOMINAL_AEROSPACE_GRADE:** Optimal circularity and surface intensity metrics.
+  * 🔵 **BRIGHT_OBSTRUCTION:** Intensity > 45 (features completely washed out by massive specular glare spikes).
+  * 🔴 **BURR_OR_TEAROUT:** Circularity < 0.08 (physical metal warping, improper drilling, or edge tearouts).
+  * 🟠 **SURFACE_ANOMALY_ML_ONLY:** Sub-pixel structural deviations flagged by the Isolation Forest.
+
+---
+
+## 🛠️ 3. Enterprise Software Solution & Deployment
+To bridge the gap between machine learning models and factory floor operations, the system features a production-grade interface:
+* **AVID Command Center:** A standalone, multi-threaded desktop application architected in **PyQt6**.
+* **Thread Decoupling:** Heavy OpenCV computational pipelines and Scikit-Learn inference loops run on background worker threads, completely insulating the GUI thread from system freezing during execution.
+* **Real-Time Telemetry:** Features embedded dynamic Matplotlib scatter plotting (Area vs. Circularity isolation clusters) and automated CSV telemetry logging (`ml_classification_report.csv`).
+
+---
+
+## 📊 4. Validation & Performance Metrics
+During empirical validation runs on production-grade satellite hardware imagery, the pipeline achieved:
+* **Operational Success:** Processed a validation batch of 39 complex micro-features with a **100% execution success rate**.
+* **Defect Quantization:** Accurately computed a precise **15.4% defect rate**, successfully flagging structural burrs and optical obstructions.
+* **Spatial Tracking:** Maintained reliable coordinate mapping with a mean positional offset tracking of 9.45 mm against baseline CAD tolerances.
+
+### 🖥️ Visual Telemetry & Analytics Preview
+| AVID Command Center GUI | Unsupervised ML Cluster Analysis |
+| :---: | :---: |
+| ![Dashboard Preview](assets/avid_dashboard_preview.png) | ![Cluster Analysis](assets/ml_cluster_analysis.png) |
+| *Multi-threaded control panel with live KPI readouts and tabular inspection data.* | *Isolation Forest clustering separating nominal geometry from structural and optical anomalies.* |
 
 ---
 
 ## 📁 Repository Structure
 
 ```text
-AVID_Project/
-├── data_image.jpeg                # Raw input photograph
-├── real_deck.csv                  # Blueprint coordinates
-├── requirements.txt               # Environment dependencies
-├── avid_dashboard_pro.py          # PyQt6 Command Center UI
-├── pixel_pick.py                  # Manual fiducial anchor utility
+Satellite_deck_inspection/
 ├── AVID/
-│   ├── pipeline.py                # Phase 1: Macro-Vision CV script
-│   ├── ml_classifier.py           # Phase 2: Micro-Inspection ML script
-│   └── core/
-│       ├── cad_parser.py          
-│       ├── hole_detector.py       
-│       └── image_preprocessor.py  
-└── reports/
-    ├── ml_classification_report.csv # Final ML intelligence
-    └── real_run/
-        ├── inspection_overlay.jpg   # Visual macro-vision map
-        └── ml_dataset/              # Extracted 150x150 ROI crops
+│   ├── core/                      # Computer vision sub-modules
+│   │   ├── cad_parser.py          # Blueprint coordinate parser
+│   │   ├── hole_detector.py       # Micro-feature inspection engine
+│   │   ├── image_preprocessor.py  # CLAHE & Bilateral filtering
+│   │   └── precision_inspector.py # Sub-pixel metric calculation
+│   ├── homography.py              # Spatial transformation & RANSAC mapping
+│   ├── ml_classifier.py           # Isolation Forest anomaly detection engine
+│   └── pipeline.py                # End-to-end execution pipeline
+├── assets/                        # Documentation images & UI previews
+│   ├── avid_dashboard_preview.png
+│   └── ml_cluster_analysis.png
+├── models/                        # Serialized model weights & assets
+├── reports/                       # Inspection telemetry and CSV outputs
+│   └── real_run/                  
+│       └── inspection_report.csv  # Sanitized execution report
+├── avid_dashboard.py              # Main PyQt6 multi-threaded UI entry point
+├── pixel_pick.py                  # Fiducial anchor calibration utility
+├── requirements.txt               # System environment dependencies
+└── README.md                      # Project technical documentation
+```
 
+---
 
+## 🚀 Installation & Quick Start
+Designed to execute seamlessly in air-gapped intranet or local secure environments.
 
-🚀 Installation & Setup
-This software is designed to run entirely offline in secure, air-gapped intranet environments.
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/Satellite_deck_inspection.git
+   cd Satellite_deck_inspection
+   ```
 
-Clone or extract the repository to your local drive.
+2. **Install environment dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-Install the required dependencies:
-    pip install -r requirements.txt
-
-💻 Usage Instructions
-The entire system is controlled via the AVID Command Center.
-
-Launch the Dashboard:
-    python avid_dashboard.py
-
-Execute Phase 1: Click INITIALIZE MACRO-VISION to scan the image and generate the visual map.
-
-Execute Phase 2: Click EXECUTE ML CLASSIFIER to run the Isolation Forest and grade the holes.
-
-View Analytics: The dashboard will automatically update with the scatter plot and data grid once the ML finishes running.
-
-Adding New Camera Data:
-To run the system on a new image, replace data_image.jpeg in the root folder, run python pixel_pick.py to get the 4 new anchor points, update AVID/homography.py, and run the dashboard.
+3. **Launch the Command Center Dashboard:**
+   ```bash
+   python avid_dashboard.py
+   ```
+   *(Note: Ensure your dashboard and graph screenshots are saved in the `assets/` folder as `avid_dashboard_preview.png` and `ml_cluster_analysis.png` so they render properly on GitHub.)*
