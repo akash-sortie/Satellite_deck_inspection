@@ -86,22 +86,3 @@ Satellite_deck_inspection/
 
 ---
 
-## 🚀 Installation & Quick Start
-Designed to execute seamlessly in air-gapped intranet or local secure environments.
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/Satellite_deck_inspection.git
-   cd Satellite_deck_inspection
-   ```
-
-2. **Install environment dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Launch the Command Center Dashboard:**
-   ```bash
-   python avid_dashboard.py
-   ```
-   *(Note: Ensure your dashboard and graph screenshots are saved in the `assets/` folder as `avid_dashboard_preview.png` and `ml_cluster_analysis.png` so they render properly on GitHub.)*
