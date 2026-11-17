@@ -1,0 +1,16 @@
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+.venv/
+env/
+
+# IDE & Editor Files
+.vscode/
+.DS_Store
+
+# Intermediate Debug Outputs & Redundant Copies
+reports/real_run/debug/
+reports/real_run/ml_dataset/* - Copy.jpg
+*.log

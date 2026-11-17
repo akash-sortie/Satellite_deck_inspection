@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-11-17T12:21:13",
+  "total_features": 39,
+  "ok": 39,
+  "missing": 0,
+  "misaligned": 0,
+  "uncertain": 0,
+  "pass_rate_pct": 100.0,
+  "mean_offset_mm": 9.456,
+  "max_offset_mm": 16.524,
+  "flagged_ids": []
+}
