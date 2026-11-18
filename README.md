@@ -17,6 +17,28 @@ Manufacturing high-reliability aerospace components under strict national standa
 
 ---
 
+## 🧠 Engineering Evolution & System Architecture
+
+### 1. Initial Approach: Supervised Deep Learning (YOLO / CNN Baseline)
+Initially, we evaluated a standard object detection paradigm (**YOLO / CNN Architecture**) utilizing a Backbone (feature extraction), Neck (multi-scale feature aggregation), and Detection Head to localize bounding boxes and classify surface burrs directly from cropped regions.
+
+![YOLO Baseline Architecture](assets/yolo_baseline_architecture.jpg)
+
+**Why We Pivoted:**
+* **Severe Data Starvation:** High-reliability aerospace manufacturing has virtually zero historical defect imagery, causing supervised CNNs to overfit rapidly.
+* **Optical & Spatial Constraints:** Standard bounding-box detectors struggled with intense metallic specular glare and could not mathematically compensate for the **16.5mm radial lens distortion** required to verify sub-millimeter CAD coordinate tolerances.
+
+---
+
+### 2. Final Solution: Two-Phase AVID Hybrid Architecture
+To overcome data scarcity and guarantee deterministic spatial precision, we engineered the **AVID Two-Phase Pipeline** combining classical Computer Vision with Unsupervised Anomaly Detection:
+
+![AVID System Architecture](assets/avid_system_architecture.jpg)
+
+* **Phase 1 — Macro-Vision Pipeline (OpenCV):** Neutralizes metallic glare via **CLAHE & Bilateral Filtering**, aligns 2D CAD coordinates to physical imagery using a **$3\times3$ Homography matrix**, corrects lens distortion via the **Brown-Conrady model**, and extracts isolated $150\times150$ pixel ROIs within a 20mm tolerance radius.
+* **Phase 2 — Micro-Inspection Engine (Scikit-Learn):** Applies center-weighted targeting (`cv2.moments`), extracts sub-pixel geometric features (Area, Circularity, Intensity, Offset), and trains an **Isolation Forest** model to flag structural burrs and glare obstructions without requiring labeled failure datasets.
+* **System Outputs:** Feeds real-time telemetry into the multi-threaded **PyQt6 HMI Command Center**, interactive **Matplotlib cluster plots**, and structured **CSV classification reports**.
+
 ## 🏗️ 2. Architectural Approach
 AVID abandons data-starved deep learning frameworks in favor of a bespoke, two-phase deterministic-stochastic pipeline optimized for speed, interpretability, and execution reliability in secure, air-gapped environments.
 
